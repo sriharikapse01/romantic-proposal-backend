@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 import razorpay
+import os
 import hmac
 import hashlib
 
@@ -11,9 +12,14 @@ app.add_middleware(
     allow_origins=["*"], allow_methods=["*"], allow_headers=["*"],
 )
 
-RAZORPAY_KEY_ID = "YOUR_TEST_KEY_ID"
-RAZORPAY_KEY_SECRET = "YOUR_TEST_KEY_SECRET"
+# Razorpay credentials from environment variables (set in Railway)
+RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID")
+RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET")
 client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
+
+@app.get("/")
+async def root():
+    return {"message": "Backend is live on Railway!"}
 
 @app.post("/create-order/")
 async def create_order(request: Request):
@@ -40,7 +46,6 @@ async def verify_payment(request: Request):
         bytes(data['razorpay_order_id'] + "|" + data['razorpay_payment_id'], 'utf-8'),
         hashlib.sha256
     ).hexdigest()
-
     if signature == data['razorpay_signature']:
         return {"status": "success"}
     else:
